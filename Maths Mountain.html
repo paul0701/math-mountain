@@ -1,0 +1,1021 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Maths Mountain</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<meta name="description" content="Climb a mountain of maths and statistics one question at a time. Free, no pay-to-skip.">
+<meta name="theme-color" content="#101935">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&display=swap">
+<style>
+/* Layout: one phone-shaped stage. The mountain is the menu; every other screen is a card laid over the night sky. */
+:root{
+  color-scheme:dark;
+  --night:#101935;      /* sky at the summit, page ground */
+  --dusk:#1c2850;       /* raised surfaces on the night */
+  --line:#34427a;       /* hairlines on the night */
+  --snow:#eef3fa;       /* cards, option buttons */
+  --ink:#14203c;        /* text on snow */
+  --mist:#a9b6d6;       /* quiet text on the night */
+  --dawn:#f2a65a;       /* the horizon glow: supplies, highlights */
+  --flag:#e4572e;       /* expedition flag: the one call to action */
+  --good:#2f9e6e;
+  --bad:#d1495b;
+  --display:"Bricolage Grotesque","Trebuchet MS",system-ui,sans-serif;
+  --body:"Atkinson Hyperlegible",Verdana,system-ui,sans-serif;
+}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{margin:0;background:var(--night);color:var(--snow);font:400 16px/1.45 var(--body);-webkit-tap-highlight-color:transparent;overscroll-behavior:none}
+button{font:inherit;color:inherit;cursor:pointer;touch-action:manipulation;-webkit-user-select:none;user-select:none}
+:focus-visible{outline:3px solid var(--dawn);outline-offset:2px}
+h1,h2{font-family:var(--display);font-weight:800;line-height:1.05;margin:0;text-wrap:balance}
+h1{font-size:2rem}h2{font-size:1.25rem}
+p{margin:0}
+.stage{position:relative;height:100%;max-width:480px;margin:0 auto;overflow:hidden;background:var(--night)}
+.screen{position:absolute;inset:0;display:flex;flex-direction:column;background:linear-gradient(180deg,var(--tint,#1c2850) 0,var(--night) 38%)}
+.pad{padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.top{display:flex;align-items:center;gap:12px;padding-block:10px;min-height:56px}
+.body{flex:1;min-height:0;overflow-y:auto;padding-block:8px 20px;display:flex;flex-direction:column;gap:16px}
+.foot{padding-block:10px 14px;display:flex;flex-direction:column;gap:8px;border-top:1px solid var(--line);background:var(--night)}
+.back{background:none;border:0;padding:10px 6px 10px 0;color:var(--mist);font-weight:700}
+.eyebrow{font-size:.75rem;letter-spacing:.12em;text-transform:uppercase;color:var(--mist);font-weight:700}
+.lede{color:var(--mist)}
+.btn{display:block;width:100%;min-height:54px;border:0;border-radius:14px;background:var(--flag);color:#fff;font-family:var(--display);font-weight:800;font-size:1.1rem;padding:12px 16px}
+.btn:disabled{background:var(--line);color:var(--mist);cursor:default}
+.btn--quiet{background:var(--dusk);border:1px solid var(--line);color:var(--snow)}
+.btn:active:not(:disabled){transform:translateY(1px)}
+
+/* resources */
+.hud{display:flex;gap:8px;margin-left:auto}
+.res{display:inline-flex;align-items:center;gap:6px;background:rgba(16,25,53,.82);border:1px solid var(--line);border-radius:999px;padding:5px 11px 5px 8px;font-weight:700;font-variant-numeric:tabular-nums}
+.res svg{width:18px;height:18px;flex:none}
+.res--sup{color:var(--dawn)}.res--shd{color:#9fd3ff}.res--alt{color:var(--snow)}
+.res small{font-weight:400;color:var(--mist);font-size:.75rem}
+
+/* map */
+.map{background:var(--night)}
+.mapscroll{position:absolute;inset:0;overflow-y:auto;overscroll-behavior:contain;padding-top:44px}
+.mapscroll svg{display:block;width:100%;height:auto}
+.maphud{position:absolute;top:0;left:0;right:0;padding-block:10px 22px;display:flex;justify-content:flex-end;align-items:center;pointer-events:none;z-index:2;background:linear-gradient(180deg,#101935 40%,rgba(16,25,53,0))}
+.maphud .hud{margin:0}
+.world text{font-family:var(--body);font-weight:700}
+.world .glyph{font-family:var(--display);font-weight:800}
+.node{cursor:pointer}
+.node.locked .disc{fill:#77809a}
+.node.locked .glyph,.node.locked .lab text{opacity:.7}
+.fog ellipse{animation:fog 11s ease-in-out infinite alternate;transform-box:fill-box}
+.fog ellipse:nth-child(2n){animation-duration:15s;animation-direction:alternate-reverse}
+@keyframes fog{from{transform:translateX(-10px)}to{transform:translateX(12px)}}
+.fire{animation:fire 1.3s ease-in-out infinite alternate;transform-box:fill-box;transform-origin:center}
+@keyframes fire{to{transform:scale(1.25);opacity:.75}}
+.pulse{animation:pulse 1.8s ease-out infinite;transform-box:fill-box;transform-origin:center}
+@keyframes pulse{from{transform:scale(1);opacity:.9}to{transform:scale(1.7);opacity:0}}
+.sheet{position:absolute;left:0;right:0;bottom:0;z-index:3;background:var(--dusk);border-top:1px solid var(--line);border-radius:20px 20px 0 0;padding-block:18px 18px;display:flex;flex-direction:column;gap:10px;box-shadow:0 -12px 40px rgba(0,0,0,.45)}
+.chips{display:flex;flex-wrap:wrap;gap:6px;padding:0;margin:0;list-style:none}
+.chips li{border:1px solid var(--line);border-radius:999px;padding:3px 10px;font-size:.85rem;color:var(--mist)}
+
+/* region path */
+.path{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:10px}
+.stop{display:grid;grid-template-columns:auto 1fr;gap:4px 14px;align-items:center;width:100%;text-align:left;background:var(--dusk);border:1px solid var(--line);border-radius:16px;padding:14px;color:var(--snow)}
+.stop__n{grid-row:span 3;width:44px;height:44px;border-radius:50%;display:grid;place-items:center;font-family:var(--display);font-weight:800;background:var(--region,var(--dawn));color:var(--ink)}
+.stop b{font-family:var(--display);font-size:1.1rem}
+.stop span{color:var(--mist);font-size:.9rem;min-width:0}
+.stop .stop__n{color:var(--ink);font-size:1.1rem}
+.stop:disabled{opacity:.5;cursor:default}
+.stop:disabled .stop__n{background:var(--line);color:var(--snow)}
+.bar{height:8px;border-radius:4px;background:var(--line);overflow:hidden}
+.bar i{display:block;height:100%;background:var(--dawn);border-radius:4px}
+.stop.cleared .bar i{background:var(--good)}
+.warcard{border:2px solid var(--flag);border-radius:16px;padding:16px;display:flex;flex-direction:column;gap:10px;background:linear-gradient(160deg,#3a1b2a,var(--dusk))}
+.warcard.locked{border-color:var(--line);background:var(--dusk)}
+
+/* question */
+.pips{display:flex;gap:4px;flex:1;min-width:0}
+.pips i{flex:1;height:8px;border-radius:4px;background:var(--line)}
+.pips i.on{background:var(--dawn)}
+.meta{display:flex;flex-wrap:wrap;gap:6px 10px;align-items:center;color:var(--mist);font-size:.85rem}
+.tag{border:1px solid var(--line);border-radius:999px;padding:2px 9px}
+.tag--back{border-color:var(--dawn);color:var(--dawn)}
+.flavour{color:var(--mist);font-style:italic}
+.q{font-size:1.3rem;line-height:1.3;font-weight:700}
+.expr{display:block;font-size:2.1rem;line-height:1.2;margin-top:6px;font-variant-numeric:tabular-nums;letter-spacing:.02em}
+.opts{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.opts.long{grid-template-columns:1fr}
+.opt{min-height:60px;border-radius:14px;border:3px solid transparent;background:var(--snow);color:var(--ink);font-weight:700;font-size:1.25rem;padding:10px 12px;font-variant-numeric:tabular-nums}
+.opts.long .opt{font-size:1.02rem;text-align:left;min-height:54px}
+.opt:disabled{cursor:default;opacity:.55}
+.opt.is-right{background:#d6f3e4;border-color:var(--good);opacity:1}
+.opt.is-wrong{background:#fbdde2;border-color:var(--bad);opacity:1}
+.fb{border-radius:14px;padding:14px;display:flex;flex-direction:column;gap:8px;background:var(--dusk);border:1px solid var(--line)}
+.fb h2{font-size:1.1rem}
+.fb.ok h2{color:#7fe0b3}.fb.no h2{color:#ff9aa8}
+.fb .why{color:var(--snow)}
+.fb .trap{color:#ffd0d6}
+.fb .note{color:var(--mist);font-size:.88rem}
+.gain{color:var(--dawn);font-weight:700}
+.streak{color:var(--mist);font-size:.9rem;text-align:center}
+
+/* fight */
+.arena{border-radius:16px;background:#0c1330;border:1px solid var(--line);padding:8px 8px 4px}
+.arena svg{display:block;width:100%;height:auto}
+.vs{display:flex;justify-content:space-between;gap:12px;font-weight:700;font-size:.9rem}
+.hp{display:flex;gap:4px;margin-top:4px}
+.hp i{width:16px;height:10px;border-radius:3px;background:var(--line)}
+.hp i.on{background:var(--bad)}
+.hp.you i.on{background:var(--good)}
+.hp.you i.sh{background:#9fd3ff}
+.taunt{color:#ffd0d6;font-style:italic}
+.brief{display:flex;flex-direction:column;gap:10px;margin:0;padding:0;list-style:none}
+.brief li{background:var(--dusk);border:1px solid var(--line);border-radius:12px;padding:12px}
+.brief b{color:var(--dawn)}
+dl.log{display:grid;grid-template-columns:1fr auto;gap:8px 16px;margin:0}
+dl.log dt{color:var(--mist)}dl.log dd{margin:0;font-weight:700;font-variant-numeric:tabular-nums;text-align:right}
+.card{background:var(--dusk);border:1px solid var(--line);border-radius:16px;padding:16px;display:flex;flex-direction:column;gap:12px}
+.small{font-size:.85rem;color:var(--mist)}
+
+/* opening flight */
+.flight{position:absolute;inset:0;z-index:10;overflow:hidden;background:#101935}
+.flight .stars,.flight .cam,.flight .near{position:absolute;left:0;top:0;transform-origin:0 0;will-change:transform}
+.flight .cam{width:400px;height:1000px}
+.flight .cam svg{width:400px;height:1000px;display:block}
+.flight .near{width:400px;height:1700px;pointer-events:none}
+.cloud{position:absolute;width:150px;height:46px;border-radius:50%;background:radial-gradient(closest-side,rgba(238,243,250,.85),rgba(238,243,250,0));animation:drift 14s linear infinite alternate}
+.cloud:nth-child(2n){animation-duration:19s;animation-direction:alternate-reverse}
+@keyframes drift{from{transform:translateX(-40px)}to{transform:translateX(50px)}}
+.cap{position:absolute;left:0;right:0;bottom:calc(18% + env(safe-area-inset-bottom,0px));text-align:center}
+.cap>div{display:inline-block;background:rgba(16,25,53,.84);border:1px solid var(--line);border-radius:16px;padding:12px 16px;max-width:100%}
+.cap b{display:block;font-family:var(--display);font-weight:800;font-size:1.7rem;line-height:1.1}
+.cap span{display:block;margin-top:4px}
+.skip{position:absolute;top:calc(12px + env(safe-area-inset-top,0px));right:max(16px,env(safe-area-inset-right,0px));background:rgba(16,25,53,.8);border:1px solid var(--line);border-radius:999px;padding:10px 18px;font-weight:700}
+.titlecard{position:absolute;left:0;right:0;bottom:0;padding-block:70px calc(22px + env(safe-area-inset-bottom,0px));background:linear-gradient(180deg,rgba(16,25,53,0),#101935 45%);display:flex;flex-direction:column;gap:12px;animation:rise .7s ease-out both}
+.titlecard h1{font-size:2.9rem;letter-spacing:-.02em}
+@keyframes rise{from{opacity:0;transform:translateY(24px)}}
+.checkout{padding-block:20px;overflow:auto;height:100%;font-size:.95rem}
+.checkout pre{white-space:pre-wrap;background:var(--dusk);padding:12px;border-radius:10px}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-pack" viewBox="0 0 24 24"><path fill="currentColor" d="M8 5a4 4 0 0 1 8 0h.5A3.5 3.5 0 0 1 20 8.5V19a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V8.5A3.5 3.5 0 0 1 7.500 5zm2 0h4a2 2 0 0 0-4 0zM8 13v2h8v-2z"/></symbol>
+  <symbol id="i-shield" viewBox="0 0 24 24"><path fill="currentColor" d="M12 2l8 3v6c0 5-3.400 9.300-8 11-4.600-1.700-8-6-8-11V5z"/></symbol>
+  <symbol id="i-peak" viewBox="0 0 24 24"><path fill="currentColor" d="M9.500 4l4 7 2-3L22 20H2z"/></symbol>
+</svg>
+<main class="stage" id="app"></main>
+
+<!-- ============================================================
+     CONTENT. Everything the game teaches lives in this block.
+     To add a region: add an entry to regions, its trails, its warlord,
+     and questions tagged with the trail/warlord id in `set`. No engine changes.
+
+     Question shape:
+       { id, set, level, q | expr, a, wrong:[text | {t, why}], why, check? }
+       a      the correct answer (always this field, never an index)
+       wrong  three wrong answers; `why` on one explains that specific slip
+       why    plain-English explanation of the right answer
+       expr   an arithmetic expression shown as the question; the checker
+              evaluates it and compares with `a`
+       check  a JS expression the checker compares with `a` (for word questions)
+     A question may instead be { id, set, level, gen(R) } returning that shape
+     with fresh numbers each time. Open the page with #check to verify all of it.
+     ============================================================ -->
+<script>
+window.MM_CONTENT = {
+  economy: { shieldCost: 12, maxShields: 3, streakForShield: 5, hearts: 3, reviewGap: 3 },
+
+  regions: [
+    { id:'algebra', name:'Algebra Foothills', glyph:'x', colour:'#f0a03c', map:{x:115,y:815},
+      tagline:'Symbols, BODMAS and letters that stand for numbers.',
+      topics:['Symbols','BODMAS','Substitution','Solving equations'],
+      trails:['symbols','bodmas','algebra'], warlord:'outlier', requires:null },
+    { id:'logs', name:'Logarithm Lake', glyph:'log', colour:'#4aa3c7', map:{x:285,y:705},
+      tagline:'Functions, powers and the logs that undo them.',
+      topics:['Functions','Exponents','Logarithms'], trails:[], warlord:null, requires:'algebra' },
+    { id:'trig', name:'Trigonometry Valley', glyph:'sin', colour:'#8cc070', map:{x:120,y:595},
+      tagline:'Angles, triangles and waves.',
+      topics:['Angles','Sine and cosine','Waves'], trails:[], warlord:null, requires:'logs' },
+    { id:'prob', name:'Probability Plains', glyph:'P', colour:'#b9a4d8', map:{x:265,y:480},
+      tagline:'The fog of uncertainty. It clears as you learn.',
+      topics:['Probability','Descriptive statistics','Distributions'], trails:[], warlord:null, requires:'trig' },
+    { id:'hyp', name:'Hypothesis Heights', glyph:'H₁', colour:'#e0647a', map:{x:160,y:365},
+      tagline:'Evidence, t-tests and ANOVA.',
+      topics:['Hypothesis testing','t-tests','ANOVA'], trails:[], warlord:null, requires:'prob' },
+    { id:'calc', name:'Calculus Creek', glyph:'∫', colour:'#5fd0c5', map:{x:205,y:250},
+      tagline:'Where the creek begins: rates of change and areas.',
+      topics:['Differentiation','Integration'], trails:[], warlord:null, requires:'hyp' },
+    { id:'summit', name:'The Null Hypothesis', glyph:'H₀', colour:'#2b2140', map:{x:200,y:140}, boss:true,
+      tagline:'You can never beat it. You can only reject it, on strong enough evidence.',
+      topics:['The final boss'], trails:[], warlord:null, requires:'calc' }
+  ],
+  basecamp: { name:'Basecamp Village', map:{x:205,y:930} },
+
+  trails: {
+    symbols: { name:'Symbols Trail', blurb:'Read the signs before you climb.', goal:8, levels:3, clearBonus:4,
+      encounters:['A weathered signpost stands at a fork in the path.','A shepherd tests every traveller with a riddle.','Carved into a boulder you find a marking.','A trail marker has been scratched with a symbol.'] },
+    bodmas: { name:'BODMAS Ridge', blurb:'Which operation goes first?', goal:10, levels:3, clearBonus:5,
+      encounters:['A mountain goat blocks the ridge. It wants an answer.','A rope bridge holds only those who calculate in the right order.','A cairn of stones is stacked in a strict order.','The wind drops. A toll keeper holds out a slate.'] },
+    algebra: { name:'Algebra Pass', blurb:'Letters stand in for numbers.', goal:10, levels:3, clearBonus:6,
+      encounters:['A locked gate bars the pass. Its combination is an unknown.','A trader weighs an unlabelled sack: call it x.','A set of balance scales sits on a rock, perfectly level.','Chalked on the cliff is an unfinished equation.'] }
+  },
+
+  warlords: {
+    outlier: { name:'Lord Outlier', title:'Dragger of Averages', set:'outlier', scene:'outlier', hp:7, cost:40, bounty:500,
+      attack:'He stands far from everyone else and drags the mean towards himself.',
+      brief:[
+        '<b>Mean</b>: add up every value, then divide by how many there are. This is BODMAS at work: (4 + 6 + 5 + 5) ÷ 4 = 5.',
+        '<b>Median</b>: sort the values and take the middle one.',
+        '<b>His weapon</b>: one extreme value. Work out what it does to each average and he loses his grip.'
+      ],
+      phases:[
+        { hits:2, level:1, taunt:'"You cannot even find the middle of your own army."' },
+        { hits:3, level:2, taunt:'"Watch your precious mean follow me wherever I stand."' },
+        { hits:2, level:3, taunt:'"One of me outweighs a hundred of you. Explain that!"' }
+      ],
+      learned:['The mean uses every value, so one extreme value drags it.','The median only cares about the middle position, so it barely moves.','When the mean and median disagree, look for an outlier on the mean\'s side.'] }
+  },
+
+  questions: [
+    /* ---------- Symbols Trail ---------- */
+    { id:'sym-ne', set:'symbols', level:1, q:'What does <b>≠</b> mean?', a:'is not equal to',
+      wrong:['is approximately equal to','is less than','is exactly the same as'],
+      why:'A plain = says two things have the same value. The stroke through it cancels that: ≠ says they are different. For example 3 + 1 ≠ 5.' },
+    { id:'sym-gt', set:'symbols', level:1, q:'Which statement is true?', a:'7 > 4',
+      wrong:[{t:'7 < 4',why:'Read it aloud: "7 is less than 4". The narrow point is aimed at the 7, so it claims 7 is the smaller one.'},'4 > 7','7 = 4'],
+      why:'The wide, open end of > or < always faces the bigger number. 7 is bigger than 4, so the open end faces the 7: 7 > 4.' },
+    { id:'sym-approx', set:'symbols', level:1, q:'What does <b>≈</b> mean?', a:'is approximately equal to',
+      wrong:['is exactly equal to','is not equal to','is greater than or equal to'],
+      why:'A straight = means exactly equal. Wavy lines mean roughly equal. For example π ≈ 3.14.' },
+    { id:'sym-sq', set:'symbols', level:1, q:'What does <b>5²</b> mean?', a:'5 × 5',
+      wrong:[{t:'5 × 2',why:'The small raised 2 is a power, not a multiplier. It counts how many 5s are multiplied together.'},'5 + 2','2 × 2 × 2 × 2 × 2'],
+      why:'The small raised number (the power) says how many copies of the number to multiply together. 5² = 5 × 5 = 25.' },
+    { id:'sym-root', set:'symbols', level:1, q:'What is <b>√49</b>?', a:'7', check:'Math.sqrt(49)',
+      wrong:[{t:'24.5',why:'That is 49 ÷ 2. A square root is not halving.'},{t:'2401',why:'That is 49 × 49, which is squaring. The root goes the other way.'},'9'],
+      why:'√ asks: which number multiplied by itself gives 49? 7 × 7 = 49, so √49 = 7.' },
+    { id:'sym-3x', set:'symbols', level:1, q:'In algebra, what does <b>3x</b> mean?', a:'3 × x',
+      wrong:['3 + x',{t:'x × x × x',why:'That would be written x³. A number in front means "lots of".'},'a number in the thirties'],
+      why:'When a number sits right next to a letter, the multiplication sign has been left out. 3x means 3 lots of x.' },
+    { id:'sym-le', set:'symbols', level:1, q:'Which symbol means "less than or equal to"?', a:'≤',
+      wrong:['≥','<','≠'],
+      why:'< means less than. The extra line underneath is half an equals sign, adding "or equal to".' },
+
+    { id:'sym-le5', set:'symbols', level:2, q:'x ≤ 5. Which value is x <b>not</b> allowed to be?', a:'6',
+      wrong:[{t:'5',why:'The line under the < means "or equal to", so 5 itself is allowed.'},'4',{t:'−2',why:'Negative numbers are less than 5, so −2 is allowed.'}],
+      why:'x ≤ 5 allows 5 and everything below it. 6 is above 5, so it breaks the rule.' },
+    { id:'sym-abs', set:'symbols', level:2, q:'What is <b>|−8|</b>?', a:'8', check:'Math.abs(-8)',
+      wrong:[{t:'−8',why:'The bars strip the direction away. Distance is never negative.'},'0','1/8'],
+      why:'The bars mean absolute value: the distance from zero, ignoring direction. −8 is 8 steps from zero.' },
+    { id:'sym-sigma', set:'symbols', level:2, q:'What does <b>Σ</b> (capital sigma) tell you to do?', a:'Add up all the values',
+      wrong:['Multiply all the values',{t:'Find the average',why:'Close. The mean is Σx ÷ n. Σ on its own is only the adding-up part.'},'Take the square root'],
+      why:'Σ is the Greek letter S, for Sum. Σx means "add up every x". It appears in almost every statistics formula.' },
+    { id:'sym-sumx', set:'symbols', level:2, q:'The values of x are 2, 5 and 3. What is <b>Σx</b>?', a:'10', check:'2+5+3',
+      wrong:[{t:'30',why:'That multiplies them. Σ means add.'},{t:'3',why:'That is how many values there are, which is n.'},'5'],
+      why:'Σx means add up all the x values: 2 + 5 + 3 = 10.' },
+    { id:'sym-xbar', set:'symbols', level:2, q:'In statistics, what does <b>x̄</b> (x-bar) stand for?', a:'The mean of a sample',
+      wrong:['The largest value','How many values there are','An unknown you must solve for'],
+      why:'A bar over a letter means the average of those values. x̄ is the sample mean: Σx ÷ n.' },
+    { id:'sym-n', set:'symbols', level:2, q:'What does <b>n</b> usually stand for in statistics?', a:'How many values there are',
+      wrong:['The mean','The middle value','Any negative number'],
+      why:'n is the sample size: the count of values. A mean is the total divided by n.' },
+    { id:'sym-fact', set:'symbols', level:2, q:'What is <b>4!</b> (four factorial)?', a:'24', check:'4*3*2*1',
+      wrong:[{t:'10',why:'That is 4 + 3 + 2 + 1. A factorial multiplies.'},{t:'16',why:'That is 4². A factorial multiplies 4 by every whole number below it.'},'4'],
+      why:'n! means multiply every whole number from n down to 1. 4! = 4 × 3 × 2 × 1 = 24. It counts the ways to arrange things, which matters in probability.' },
+
+    { id:'sym-cube', set:'symbols', level:3, q:'What does <b>2³</b> equal?', a:'8', check:'2**3',
+      wrong:[{t:'6',why:'That is 2 × 3. The power says how many 2s to multiply together.'},{t:'9',why:'That is 3². Here the 2 is the number and the 3 is the power.'},'5'],
+      why:'2³ means three 2s multiplied together: 2 × 2 × 2 = 8.' },
+    { id:'sym-x3', set:'symbols', level:3, q:'Which is the same as <b>x × x × x</b>?', a:'x³',
+      wrong:[{t:'3x',why:'3x means x + x + x. Three lots added, not multiplied.'},'x + 3','3ˣ'],
+      why:'Multiplying x by itself three times is written with a power: x³. Adding x three times would be 3x.' },
+    { id:'sym-musigma', set:'symbols', level:3, q:'What do <b>μ</b> and <b>σ</b> stand for in statistics?', a:'μ is the population mean, σ is the standard deviation',
+      wrong:['μ is the median, σ is the sum','μ is the sample size, σ is the mean','μ is the standard deviation, σ is the population mean'],
+      why:'Greek letters describe a whole population: μ (mu) is its mean and lower-case σ (sigma) is its standard deviation, a measure of spread. Capital Σ is different: that is the sum.' },
+    { id:'sym-sumx2', set:'symbols', level:3, q:'The values of x are 1, 2 and 3. What is <b>Σx²</b>?', a:'14', check:'1**2+2**2+3**2',
+      wrong:[{t:'36',why:'You added first, then squared. That is (Σx)², a different quantity.'},{t:'12',why:'Squaring is not doubling. 3² is 3 × 3 = 9.'},{t:'6',why:'That is Σx. The ² asks you to square each value before adding.'}],
+      why:'Powers come before adding. Square each value first (1, 4, 9), then add them: 14.' },
+    { id:'sym-between', set:'symbols', level:3, q:'<b>−3 < x < 2</b>. Which value could x be?', a:'0',
+      wrong:[{t:'−3',why:'There is no "or equal to" line, so the ends themselves are excluded.'},{t:'2',why:'There is no "or equal to" line, so the ends themselves are excluded.'},'5'],
+      why:'x is trapped strictly between −3 and 2. 0 sits inside that gap.' },
+    { id:'sym-pm', set:'symbols', level:3, q:'A measurement is given as <b>10 ± 2</b>. What range does that describe?', a:'From 8 to 12',
+      wrong:['From 10 to 12','Exactly 12','From 2 to 10'],
+      why:'± means plus or minus. Go 2 below (8) and 2 above (12). You will meet this again in confidence intervals.' },
+
+    /* ---------- BODMAS Ridge ---------- */
+    { id:'bod-o', set:'bodmas', level:1, q:'In BODMAS, what does the <b>O</b> stand for?', a:'Orders: powers and roots',
+      wrong:['Operations','Ones','Opposites'],
+      why:'Brackets, Orders, Division, Multiplication, Addition, Subtraction. "Orders" are powers such as 3² and roots such as √9.' },
+    { id:'bod-1', set:'bodmas', level:1, expr:'2 + 3 × 4', a:'14',
+      wrong:[{t:'20',why:'You worked left to right: 2 + 3 = 5, then × 4. Multiplication goes before addition wherever it sits.'},'24','9'],
+      why:'Multiplication before addition: 3 × 4 = 12 first, then 2 + 12 = 14.' },
+    { id:'bod-2', set:'bodmas', level:1, expr:'10 − 4 ÷ 2', a:'8',
+      wrong:[{t:'3',why:'You subtracted first: 10 − 4 = 6, then ÷ 2. Division goes before subtraction.'},'4','12'],
+      why:'Division before subtraction: 4 ÷ 2 = 2 first, then 10 − 2 = 8.' },
+    { id:'bod-3', set:'bodmas', level:1, expr:'(2 + 3) × 4', a:'20',
+      wrong:[{t:'14',why:'That ignores the brackets. Brackets say "do me first".'},'24','9'],
+      why:'Brackets first: 2 + 3 = 5, then 5 × 4 = 20. Brackets exist to override the usual order.' },
+    { id:'bod-4', set:'bodmas', level:1, expr:'8 − 2 + 3', a:'9',
+      wrong:[{t:'3',why:'You added first because A comes before S in BODMAS. But addition and subtraction rank equally: go left to right.'},'13','7'],
+      why:'Addition and subtraction are equal partners, so work left to right: 8 − 2 = 6, then 6 + 3 = 9.' },
+    { id:'bod-5', set:'bodmas', level:1, expr:'12 ÷ 3 × 2', a:'8',
+      wrong:[{t:'2',why:'You multiplied first. Division and multiplication rank equally: go left to right.'},'6','18'],
+      why:'Division and multiplication are equal partners, so work left to right: 12 ÷ 3 = 4, then 4 × 2 = 8.' },
+
+    { id:'bod-6', set:'bodmas', level:2, expr:'2 + 3²', a:'11',
+      wrong:[{t:'25',why:'You added first, then squared. Powers come before addition.'},{t:'8',why:'3² is 3 × 3 = 9, not 3 × 2.'},'10'],
+      why:'Orders (powers) before addition: 3² = 9 first, then 2 + 9 = 11.' },
+    { id:'bod-7', set:'bodmas', level:2, expr:'2 × 3²', a:'18',
+      wrong:[{t:'36',why:'You multiplied first, then squared. The power belongs only to the 3.'},{t:'12',why:'3² is 3 × 3 = 9, not 3 × 2.'},'11'],
+      why:'Orders before multiplication: 3² = 9 first, then 2 × 9 = 18.' },
+    { id:'bod-8', set:'bodmas', level:2, expr:'20 − (3 + 2) × 2', a:'10',
+      wrong:[{t:'30',why:'After the brackets you subtracted before multiplying. Multiplication still comes first.'},{t:'21',why:'That ignores the brackets.'},'38'],
+      why:'Brackets: 3 + 2 = 5. Then multiplication: 5 × 2 = 10. Then subtraction: 20 − 10 = 10.' },
+    { id:'bod-9', set:'bodmas', level:2, expr:'6 + 12 ÷ (4 − 1)', a:'10',
+      wrong:[{t:'6',why:'You added 6 + 12 before dividing. Division comes before addition.'},{t:'8',why:'That ignores the brackets: 12 ÷ 4 instead of 12 ÷ 3.'},'2'],
+      why:'Brackets: 4 − 1 = 3. Then division: 12 ÷ 3 = 4. Then addition: 6 + 4 = 10.' },
+    { id:'bod-10', set:'bodmas', level:2, expr:'18 ÷ (3 × 2)', a:'3',
+      wrong:[{t:'12',why:'That ignores the brackets: 18 ÷ 3 = 6, then × 2.'},'6','9'],
+      why:'Brackets first: 3 × 2 = 6, then 18 ÷ 6 = 3.' },
+
+    { id:'bod-11', set:'bodmas', level:3, expr:'(8 − 2)² ÷ 4 + 1', a:'10',
+      wrong:[{t:'7.2',why:'You added 4 + 1 before dividing. Division comes before addition.'},{t:'8',why:'That ignores the brackets, so only the 2 was squared.'},{t:'4',why:'6² is 6 × 6 = 36, not 6 × 2.'}],
+      why:'Brackets: 8 − 2 = 6. Orders: 6² = 36. Division: 36 ÷ 4 = 9. Addition: 9 + 1 = 10.' },
+    { id:'bod-12', set:'bodmas', level:3, expr:'√(9 + 16)', a:'5',
+      wrong:[{t:'7',why:'You rooted each number separately: 3 + 4. Roots do not split across addition.'},'25','12.5'],
+      why:'The root sign acts like a bracket: finish the inside first. 9 + 16 = 25, and √25 = 5.' },
+    { id:'bod-13', set:'bodmas', level:3, expr:'(2 + 4 + 6) ÷ 3', a:'4',
+      wrong:[{t:'8',why:'That ignores the brackets, so only the 6 was divided by 3.'},'12','6'],
+      why:'Brackets first: 2 + 4 + 6 = 12, then 12 ÷ 3 = 4. This is exactly how a mean is calculated: total first, then divide.' },
+    { id:'bod-14', set:'bodmas', level:3, q:'You type this into a calculator with no brackets. What does it show?<span class="expr">2 + 4 + 6 ÷ 3</span>', a:'8', check:'2+4+6/3',
+      wrong:[{t:'4',why:'That would need brackets around 2 + 4 + 6. Without them, only the 6 is divided.'},'12','6'],
+      why:'Division first: 6 ÷ 3 = 2. Then 2 + 4 + 2 = 8. To get a mean you must bracket the total: (2 + 4 + 6) ÷ 3.' },
+    { id:'bod-15', set:'bodmas', level:3, expr:'5 × (3 + 1) − 2³', a:'12',
+      wrong:[{t:'14',why:'2³ is 2 × 2 × 2 = 8, not 2 × 3.'},{t:'8',why:'That ignores the brackets: 5 × 3 + 1 − 8.'},'40'],
+      why:'Brackets: 3 + 1 = 4. Orders: 2³ = 8. Multiplication: 5 × 4 = 20. Subtraction: 20 − 8 = 12.' },
+    { id:'bod-16', set:'bodmas', level:3, expr:'3 × 4 − 2 × 5', a:'2',
+      wrong:[{t:'50',why:'You worked left to right. Both multiplications happen before the subtraction.'},'30','22'],
+      why:'Do both multiplications first: 3 × 4 = 12 and 2 × 5 = 10. Then subtract: 12 − 10 = 2.' },
+
+    { id:'bod-g1', set:'bodmas', level:1, gen(R){ const a=R.int(2,9), b=R.int(2,6), c=R.int(2,6);
+      return { expr:`${a} + ${b} × ${c}`, a:R.fmt(a+b*c),
+        wrong:[{t:R.fmt((a+b)*c),why:`You worked left to right: ${a} + ${b} = ${a+b}, then × ${c}. Multiplication goes before addition wherever it sits.`},
+               {t:R.fmt(a+b+c),why:`That adds all three numbers. The × between ${b} and ${c} means multiply.`},
+               {t:R.fmt(a*b+c),why:`You multiplied ${a} × ${b}, but the × sits between ${b} and ${c}.`}],
+        why:`Multiplication before addition: ${b} × ${c} = ${b*c} first, then ${a} + ${b*c} = ${a+b*c}.` }; } },
+    { id:'bod-g2', set:'bodmas', level:1, gen(R){ const c=R.int(2,5), k=R.int(2,6), b=c*k, a=b+c*R.int(1,4);
+      return { expr:`${a} − ${b} ÷ ${c}`, a:R.fmt(a-k),
+        wrong:[{t:R.fmt((a-b)/c),why:`You subtracted first: ${a} − ${b} = ${a-b}, then ÷ ${c}. Division goes before subtraction.`},
+               {t:R.fmt(k),why:`That is ${b} ÷ ${c}. You still need to subtract it from ${a}.`},
+               {t:R.fmt(a-b-c),why:`That subtracts both numbers. The ÷ between ${b} and ${c} means divide.`}],
+        why:`Division before subtraction: ${b} ÷ ${c} = ${k} first, then ${a} − ${k} = ${a-k}.` }; } },
+    { id:'bod-g3', set:'bodmas', level:2, gen(R){ const a=R.int(2,6), b=R.int(2,7), c=R.int(2,7), d=R.int(1,5);
+      return { expr:`${a} × (${b} + ${c}) − ${d}`, a:R.fmt(a*(b+c)-d),
+        wrong:[{t:R.fmt(a*b+c-d),why:`That ignores the brackets: ${a} × ${b} first. Brackets say "do me first".`},
+               {t:R.fmt(a*(b+c-d)),why:`You subtracted ${d} inside the brackets. The − ${d} sits outside, so it happens last.`},
+               {t:R.fmt(a+b+c-d),why:`A number written against a bracket multiplies it: ${a} × ${b+c}.`}],
+        why:`Brackets: ${b} + ${c} = ${b+c}. Multiplication: ${a} × ${b+c} = ${a*(b+c)}. Subtraction: ${a*(b+c)} − ${d} = ${a*(b+c)-d}.` }; } },
+    { id:'bod-g4', set:'bodmas', level:2, gen(R){ const a=R.int(2,9), b=R.int(3,7);
+      return { expr:`${a} + ${b}²`, a:R.fmt(a+b*b),
+        wrong:[{t:R.fmt((a+b)*(a+b)),why:`You added first, then squared. Powers come before addition.`},
+               {t:R.fmt(a+2*b),why:`${b}² means ${b} × ${b} = ${b*b}, not ${b} × 2.`},
+               {t:R.fmt(b*b),why:`That is ${b}². You still need to add the ${a}.`}],
+        why:`Orders (powers) before addition: ${b}² = ${b*b} first, then ${a} + ${b*b} = ${a+b*b}.` }; } },
+    { id:'bod-g5', set:'bodmas', level:3, gen(R){ const a=R.int(1,9), b=R.int(2,4), c=R.int(3,5);
+      return { expr:`${a} + ${b} × ${c}²`, a:R.fmt(a+b*c*c),
+        wrong:[{t:R.fmt((a+b)*c*c),why:`You added ${a} + ${b} first. Addition comes last here.`},
+               {t:R.fmt(a+(b*c)*(b*c)),why:`You multiplied ${b} × ${c} before squaring. The power belongs only to the ${c}.`},
+               {t:R.fmt(a+b*c*2),why:`${c}² means ${c} × ${c} = ${c*c}, not ${c} × 2.`}],
+        why:`Orders: ${c}² = ${c*c}. Multiplication: ${b} × ${c*c} = ${b*c*c}. Addition: ${a} + ${b*c*c} = ${a+b*c*c}.` }; } },
+    { id:'bod-g6', set:'bodmas', level:3, gen(R){ const a=R.int(3,7), b=R.int(4,8), c=R.int(2,4), d=R.int(2,5); if(a*b<=c*d) return null;
+      return { expr:`${a} × ${b} − ${c} × ${d}`, a:R.fmt(a*b-c*d),
+        wrong:[{t:R.fmt((a*b-c)*d),why:`You worked left to right. Both multiplications happen before the subtraction.`},
+               {t:R.fmt(a*b+c*d),why:`The sign between the two products is a minus.`},
+               {t:R.fmt(a*b-c),why:`You stopped early: the ${c} must be multiplied by ${d} before it is subtracted.`}],
+        why:`Do both multiplications first: ${a} × ${b} = ${a*b} and ${c} × ${d} = ${c*d}. Then subtract: ${a*b} − ${c*d} = ${a*b-c*d}.` }; } },
+
+    /* ---------- Algebra Pass ---------- */
+    { id:'alg-1', set:'algebra', level:1, q:'If x = 4, what is <b>3x</b>?', a:'12', check:'3*4',
+      wrong:[{t:'34',why:'3x does not mean "3 followed by x". It means 3 × x.'},{t:'7',why:'That adds. A number next to a letter means multiply.'},'64'],
+      why:'3x means 3 × x. Swap the x for 4: 3 × 4 = 12.' },
+    { id:'alg-2', set:'algebra', level:1, q:'If x = 5, what is <b>2x + 1</b>?', a:'11', check:'2*5+1',
+      wrong:[{t:'12',why:'You added 5 + 1 first. Multiplication comes before addition.'},{t:'26',why:'2x means 2 × x, not the digits 2 and 5 side by side.'},'8'],
+      why:'Swap x for 5: 2 × 5 + 1. Multiply first (10), then add 1: 11.' },
+    { id:'alg-3', set:'algebra', level:1, q:'Simplify: <b>x + x + x</b>', a:'3x',
+      wrong:[{t:'x³',why:'x³ is x × x × x. Here the x\'s are added.'},'3 + x','3'],
+      why:'Three lots of x added together is written 3x, the same way 5 + 5 + 5 is 3 × 5.' },
+    { id:'alg-4', set:'algebra', level:1, q:'Simplify: <b>2x + 5x</b>', a:'7x',
+      wrong:[{t:'7x²',why:'Adding like terms does not change the power. 2 apples + 5 apples is 7 apples, not 7 square apples.'},{t:'10x',why:'That multiplies the 2 and 5. The sign between them is +.'},'7'],
+      why:'2 lots of x plus 5 lots of x is 7 lots of x.' },
+    { id:'alg-5', set:'algebra', level:1, q:'If a = 3 and b = 2, what is <b>a + 4b</b>?', a:'11', check:'3+4*2',
+      wrong:[{t:'14',why:'You added 3 + 4 first. 4b is a multiplication, and that comes before addition.'},{t:'45',why:'4b means 4 × b, not the digits 4 and 2 side by side.'},'9'],
+      why:'Swap the letters for their numbers: 3 + 4 × 2. Multiply first (8), then add: 11.' },
+    { id:'alg-6', set:'algebra', level:1, q:'What is x in <b>x + 3 = 10</b>?', a:'7', check:'10-3',
+      wrong:[{t:'13',why:'You added 3. To undo "+ 3" you subtract 3.'},'30','10'],
+      why:'Ask: what number plus 3 makes 10? Undo the + 3 by subtracting 3 from both sides: x = 7.' },
+
+    { id:'alg-7', set:'algebra', level:2, q:'Solve: <b>2x = 14</b>', a:'7', check:'14/2',
+      wrong:[{t:'12',why:'You subtracted 2. But 2x means 2 × x, and you undo multiplying by dividing.'},{t:'28',why:'You multiplied. To undo "× 2" you divide by 2.'},'16'],
+      why:'2x means 2 × x. Undo the × 2 by dividing both sides by 2: x = 7.' },
+    { id:'alg-8', set:'algebra', level:2, q:'Solve: <b>x − 5 = 9</b>', a:'14', check:'9+5',
+      wrong:[{t:'4',why:'You subtracted 5 again. To undo "− 5" you add 5.'},'45','−4'],
+      why:'Undo the − 5 by adding 5 to both sides: x = 9 + 5 = 14. Check: 14 − 5 = 9.' },
+    { id:'alg-9', set:'algebra', level:2, q:'Solve: <b>x ÷ 3 = 6</b>', a:'18', check:'6*3',
+      wrong:[{t:'2',why:'You divided again. To undo "÷ 3" you multiply by 3.'},'9','3'],
+      why:'Undo the ÷ 3 by multiplying both sides by 3: x = 18. Check: 18 ÷ 3 = 6.' },
+    { id:'alg-10', set:'algebra', level:2, q:'If x = 3, what is <b>x² + 1</b>?', a:'10', check:'3**2+1',
+      wrong:[{t:'7',why:'x² means x × x, not x × 2.'},{t:'16',why:'You added before squaring. Powers come first.'},'9'],
+      why:'Swap x for 3: 3² + 1. Powers first: 9. Then add 1: 10.' },
+    { id:'alg-11', set:'algebra', level:2, q:'If x = 3, what is <b>2x²</b>?', a:'18', check:'2*3**2',
+      wrong:[{t:'36',why:'You doubled first, then squared. The power belongs only to the x.'},{t:'12',why:'x² means x × x = 9, not x × 2.'},'9'],
+      why:'Powers before multiplication: 3² = 9 first, then 2 × 9 = 18.' },
+    { id:'alg-12', set:'algebra', level:2, q:'Simplify: <b>3x + 2 + x + 5</b>', a:'4x + 7',
+      wrong:[{t:'11x',why:'Plain numbers and x terms are different kinds of thing. They cannot be merged.'},{t:'3x + 7',why:'A lone x counts as 1x, so 3x + x = 4x.'},'4x² + 7'],
+      why:'Collect like terms: the x terms (3x + x = 4x) and the plain numbers (2 + 5 = 7).' },
+    { id:'alg-13', set:'algebra', level:2, q:'Expand: <b>2(x + 3)</b>', a:'2x + 6',
+      wrong:[{t:'2x + 3',why:'The 2 multiplies everything inside the brackets, including the 3.'},'x + 6','2x + 5'],
+      why:'The number outside multiplies every term inside: 2 × x = 2x and 2 × 3 = 6.' },
+
+    { id:'alg-14', set:'algebra', level:3, q:'Solve: <b>2x + 3 = 11</b>', a:'4', check:'(11-3)/2',
+      wrong:[{t:'8',why:'That is 2x. You stopped one step early: divide by 2.'},{t:'7',why:'You added 3. To undo "+ 3" you subtract it.'},{t:'5.5',why:'You divided before removing the + 3. Undo the addition first.'}],
+      why:'Undo in reverse order. Subtract 3 from both sides: 2x = 8. Divide by 2: x = 4. Check: 2 × 4 + 3 = 11.' },
+    { id:'alg-15', set:'algebra', level:3, q:'Solve: <b>3x − 4 = 11</b>', a:'5', check:'(11+4)/3',
+      wrong:[{t:'15',why:'That is 3x. You stopped one step early: divide by 3.'},{t:'7',why:'That is 11 − 4. To undo "− 4" you add 4.'},'45'],
+      why:'Add 4 to both sides: 3x = 15. Divide by 3: x = 5. Check: 3 × 5 − 4 = 11.' },
+    { id:'alg-16', set:'algebra', level:3, q:'Solve: <b>x ÷ 2 + 1 = 6</b>', a:'10', check:'(6-1)*2',
+      wrong:[{t:'5',why:'That is x ÷ 2. You stopped one step early: multiply by 2.'},{t:'14',why:'You added 1. To undo "+ 1" you subtract it.'},{t:'2.5',why:'To undo "÷ 2" you multiply by 2.'}],
+      why:'Subtract 1 from both sides: x ÷ 2 = 5. Multiply by 2: x = 10. Check: 10 ÷ 2 + 1 = 6.' },
+    { id:'alg-17', set:'algebra', level:3, q:'Expand: <b>3(2x − 1)</b>', a:'6x − 3',
+      wrong:[{t:'6x − 1',why:'The 3 multiplies everything inside the brackets, including the −1.'},'5x − 3','6x + 3'],
+      why:'Multiply each term inside by 3: 3 × 2x = 6x and 3 × −1 = −3.' },
+    { id:'alg-18', set:'algebra', level:3, q:'Simplify: <b>5x − 2x + 4</b>', a:'3x + 4',
+      wrong:[{t:'7x',why:'The x terms and the plain number are different kinds of thing. They cannot be merged.'},'7x + 4','7'],
+      why:'Collect the x terms: 5x − 2x = 3x. The + 4 has no x, so it stays separate.' },
+    { id:'alg-19', set:'algebra', level:3, q:'If x = −2, what is <b>x²</b>?', a:'4', check:'(-2)*(-2)',
+      wrong:[{t:'−4',why:'A negative times a negative is positive: −2 × −2 = +4.'},'0','2'],
+      why:'x² means x × x = −2 × −2. Two negatives multiply to a positive: 4. This is why squared distances in statistics are never negative.' },
+    { id:'alg-20', set:'algebra', level:3, q:'The mean formula is x̄ = Σx ÷ n. If Σx = 60 and n = 12, what is <b>x̄</b>?', a:'5', check:'60/12',
+      wrong:[{t:'720',why:'The formula divides the total by n. It does not multiply.'},'48','72'],
+      why:'Substitute the numbers into the formula: 60 ÷ 12 = 5. A formula is only algebra waiting for numbers.' },
+    { id:'alg-21', set:'algebra', level:3, q:'Rearrange <b>y = x + 5</b> to make x the subject.', a:'x = y − 5',
+      wrong:[{t:'x = y + 5',why:'To undo "+ 5" you subtract 5 from both sides.'},'x = 5 − y','x = 5y'],
+      why:'Subtract 5 from both sides to leave x alone: y − 5 = x.' },
+
+    { id:'alg-g1', set:'algebra', level:1, gen(R){ const a=R.int(2,6), k=R.int(2,9), b=R.int(1,9);
+      return { q:`If x = ${k}, what is <b>${a}x + ${b}</b>?`, check:`${a}*${k}+${b}`, a:R.fmt(a*k+b),
+        wrong:[{t:R.fmt(a*(k+b)),why:`You added ${k} + ${b} first. Multiplication comes before addition.`},
+               {t:R.fmt(a*10+k+b),why:`${a}x means ${a} × x, not the digits ${a} and ${k} side by side.`},
+               {t:R.fmt(a+k+b),why:`A number next to a letter means multiply: ${a} × ${k}.`}],
+        why:`Swap x for ${k}: ${a} × ${k} + ${b}. Multiply first (${a*k}), then add ${b}: ${a*k+b}.` }; } },
+    { id:'alg-g2', set:'algebra', level:2, gen(R){ const a=R.int(3,9), x=R.int(3,12), c=a*x;
+      return { q:`Solve: <b>${a}x = ${c}</b>`, check:`${c}/${a}`, a:R.fmt(x),
+        wrong:[{t:R.fmt(c-a),why:`You subtracted ${a}. But ${a}x means ${a} × x, and you undo multiplying by dividing.`},
+               {t:R.fmt(c*a),why:`You multiplied. To undo "× ${a}" you divide by ${a}.`},
+               {t:R.fmt(c+a),why:`${a}x means ${a} × x. Undo it by dividing by ${a}.`}],
+        why:`${a}x means ${a} × x. Divide both sides by ${a}: x = ${c} ÷ ${a} = ${x}.` }; } },
+    { id:'alg-g3', set:'algebra', level:3, gen(R){ const a=R.int(2,6), x=R.int(2,9), b=R.int(1,9), c=a*x+b;
+      return { q:`Solve: <b>${a}x + ${b} = ${c}</b>`, check:`(${c}-${b})/${a}`, a:R.fmt(x),
+        wrong:[{t:R.fmt(c-b),why:`That is ${a}x. You stopped one step early: divide by ${a}.`},
+               {t:R.fmt(c-b-a),why:`${a}x means ${a} × x. After subtracting ${b}, divide by ${a} rather than subtracting it.`},
+               {t:R.fmt(c+b),why:`To undo "+ ${b}" you subtract it, and then divide by ${a}.`}],
+        why:`Undo in reverse order. Subtract ${b}: ${a}x = ${c-b}. Divide by ${a}: x = ${x}. Check: ${a} × ${x} + ${b} = ${c}.` }; } },
+
+    /* ---------- Lord Outlier ---------- */
+    { id:'out-mean', set:'outlier', level:1, q:'How do you calculate a <b>mean</b>?', a:'Add up all the values, then divide by how many there are',
+      wrong:[{t:'Sort the values and take the middle one',why:'That is the median.'},{t:'Take the most common value',why:'That is the mode.'},{t:'Subtract the smallest from the largest',why:'That is the range, a measure of spread.'}],
+      why:'The mean shares the total equally between every value: Σx ÷ n.' },
+    { id:'out-median', set:'outlier', level:1, q:'How do you find a <b>median</b>?', a:'Sort the values and take the middle one',
+      wrong:[{t:'Add up all the values, then divide by how many there are',why:'That is the mean.'},{t:'Take the most common value',why:'That is the mode.'},'Take the largest value'],
+      why:'The median is the middle value once the data is in order. Half the values sit below it and half above.' },
+    { id:'out-g1', set:'outlier', level:1, gen(R){ const v=[R.int(2,9),R.int(2,9),R.int(2,9),R.int(2,9)], s=v[0]+v[1]+v[2]+v[3]; if(s%4) return null;
+      return { q:`A patrol reports these counts. What is the <b>mean</b>?<span class="expr">${v.join(', ')}</span>`, check:`(${v.join('+')})/4`, a:R.fmt(s/4),
+        wrong:[{t:R.fmt(s),why:`That is the total. The mean shares the total equally: divide by the 4 values.`},
+               {t:R.fmt(Math.max(...v)+1),why:`The mean of a set can never be bigger than its largest value.`},
+               {t:R.fmt(s/2),why:`You divided by 2. Divide by how many values there are: 4.`}],
+        why:`Add them up: ${v.join(' + ')} = ${s}. There are 4 values, so ${s} ÷ 4 = ${s/4}.` }; } },
+    { id:'out-g2', set:'outlier', level:1, gen(R){ const v=[]; while(v.length<5){ const n=R.int(1,15); if(!v.includes(n)) v.push(n); }
+      const s=[...v].sort((p,q)=>p-q), med=s[2]; if(v[2]===med) return null;
+      return { q:`What is the <b>median</b> of these values?<span class="expr">${v.join(', ')}</span>`, check:`[${v.join(',')}].sort((p,q)=>p-q)[2]`, a:R.fmt(med),
+        wrong:[{t:R.fmt(v[2]),why:`That is the middle of the list as written. Sort the values first.`},
+               {t:R.fmt(s[4]),why:`That is the largest value.`},
+               {t:R.fmt(s[0]),why:`That is the smallest value.`}],
+        why:`Sort them: ${s.join(', ')}. The middle (third) value is ${med}.` }; } },
+
+    { id:'out-drag', set:'outlier', level:2, q:'Lord Outlier adds one enormous value to a data set. Which measure is dragged furthest?', a:'The mean',
+      wrong:[{t:'The median',why:'The median only shifts by one position at most, however huge the newcomer is.'},'The smallest value','Nothing moves'],
+      why:'The mean uses the size of every value, so one enormous value pulls the total, and the mean with it. The median only counts positions.' },
+    { id:'out-g3', set:'outlier', level:2, gen(R){ const v=[R.int(3,9),R.int(3,9),R.int(3,9),R.int(3,9)], s=v[0]+v[1]+v[2]+v[3]; if(s%4) return null;
+      const o=R.int(25,60); if((s+o)%5) return null; const m=s/4;
+      return { q:`Your patrols count ${v.join(', ')} (mean ${m}). Lord Outlier marches in a giant worth <b>${o}</b>. What is the mean now?`, check:`(${v.join('+')}+${o})/5`, a:R.fmt((s+o)/5),
+        wrong:[{t:R.fmt(m),why:`The mean uses every value, so a new value must move it.`},
+               {t:R.fmt((m+o)/2),why:`You averaged the old mean with the giant as if they counted equally. The giant is one value among five.`},
+               {t:R.fmt((s+o)/4),why:`The new total is right, but there are now 5 values, not 4.`}],
+        why:`New total: ${s} + ${o} = ${s+o}. There are now 5 values, so ${s+o} ÷ 5 = ${(s+o)/5}. One value dragged the mean from ${m} to ${(s+o)/5}.` }; } },
+    { id:'out-g4', set:'outlier', level:2, gen(R){ const v=[R.int(3,9),R.int(3,9),R.int(3,9),R.int(3,9)].sort((p,q)=>p-q), s=v[0]+v[1]+v[2]+v[3];
+      const o=R.int(25,60); if((s+o)%5) return null;
+      return { q:`Your patrols count ${v.join(', ')}. Lord Outlier adds a giant worth <b>${o}</b>. What is the <b>median</b> now?`, check:`[${v.join(',')},${o}].sort((p,q)=>p-q)[2]`, a:R.fmt(v[2]),
+        wrong:[{t:R.fmt((s+o)/5),why:`That is the new mean, which Outlier dragged upwards. The median is the middle value once sorted.`},
+               {t:R.fmt(o),why:`That is the outlier itself. It sits at the far end, not the middle.`},
+               {t:R.fmt(o-v[0]),why:`That is the range: largest minus smallest.`}],
+        why:`Sorted: ${v.join(', ')}, ${o}. The middle (third) value is ${v[2]}. The giant could be ${o} or ${o*100}: the median would not change.` }; } },
+
+    { id:'out-side', set:'outlier', level:3, q:'A data set has median 12 and mean 20. Where is the outlier hiding?', a:'On the high side, pulling the mean up',
+      wrong:[{t:'On the low side, pulling the mean down',why:'A low outlier would drag the mean below the median.'},'Exactly at the median','There cannot be one'],
+      why:'The median stays near the typical values. The mean chases the outlier. The mean is above the median, so the outlier is high.' },
+    { id:'out-house', set:'outlier', level:3, q:'Four houses on a street cost about £200,000 each. A fifth is a £5 million mansion. Which average best describes a typical house?', a:'The median',
+      wrong:[{t:'The mean',why:'The mean would be over £1 million, which describes none of the five houses.'},'The largest value','The total'],
+      why:'The mansion drags the mean far above every ordinary house. The median stays at about £200,000, the typical value. This is why house prices and salaries are usually reported as medians.' },
+    { id:'out-why', set:'outlier', level:3, q:'Why does the median shrug off Lord Outlier?', a:'It depends only on which value is in the middle, not on how extreme the ends are',
+      wrong:[{t:'Outliers are deleted before it is calculated',why:'Nothing is removed. The outlier is still counted, but only as "one value at the end".'},'It is always bigger than the mean','It adds the values instead of dividing'],
+      why:'The median only asks "which value is in the middle?". Making the largest value even larger does not change which value sits in the middle.' },
+    { id:'out-typo', set:'outlier', level:3, q:'The mean of 5 values is 20. One value, recorded as 60, was a typo for 10. What is the corrected mean?', a:'10', check:'(20*5-60+10)/5',
+      wrong:[{t:'20',why:'The total changed, so the mean must change too.'},{t:'50',why:'That is the corrected total. Divide it by the 5 values.'},'15'],
+      why:'Rebuild the total: 5 × 20 = 100. Fix the typo: 100 − 60 + 10 = 50. Share it out: 50 ÷ 5 = 10. One bad value had doubled the mean.' },
+    { id:'out-low', set:'outlier', level:3, q:'Lord Outlier sends a value far <b>below</b> all the others. What happens to the mean?', a:'It is dragged down',
+      wrong:['It is dragged up','It stays the same','It becomes equal to the median'],
+      why:'An outlier pulls the mean towards itself, in whichever direction it lies. A very low value lowers the total, so the mean falls.' },
+    { id:'out-g5', set:'outlier', level:3, gen(R){ const n=R.pick([4,9]), m=R.int(5,12), k=R.int(3,6), nm=m+k, o=nm*(n+1)-n*m;
+      return { q:`The mean of ${n} values is ${m}. Lord Outlier adds one value of <b>${o}</b>. What is the new mean?`, check:`(${n}*${m}+${o})/(${n}+1)`, a:R.fmt(nm),
+        wrong:[{t:R.fmt((m+o)/2),why:`You averaged the old mean with the newcomer as if they counted equally. The old mean stands for ${n} values.`},
+               {t:R.fmt(m),why:`The mean uses every value, so a new value must move it.`},
+               {t:R.fmt((n*m+o)/n),why:`The new total is right, but there are now ${n+1} values, not ${n}.`}],
+        why:`Rebuild the total: ${n} × ${m} = ${n*m}. Add the newcomer: ${n*m} + ${o} = ${n*m+o}. Share between ${n+1} values: ${n*m+o} ÷ ${n+1} = ${nm}.` }; } }
+  ]
+};
+</script>
+
+<!-- ============================================================
+     ENGINE. Reads MM_CONTENT; knows nothing about any particular region.
+     ============================================================ -->
+<script>
+(function(){
+'use strict';
+const C = window.MM_CONTENT, E = C.economy;
+const KEY = 'maths-mountain-save-v1';
+const app = document.getElementById('app');
+
+/* ---------- save ---------- */
+function fresh(){ return { v:1, introSeen:false, supplies:0, shields:0, score:0, streak:0, bestStreak:0, asked:0, right:0,
+  trails:{}, regions:{}, fight:null, at:{screen:'map'}, profile:{name:null} }; }
+let S = fresh();
+try { const raw = JSON.parse(localStorage.getItem(KEY)); if (raw && raw.v === 1) S = Object.assign(S, raw); } catch (e) {}
+function save(){ try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) {} }
+
+/* ---------- helpers ---------- */
+const R = {
+  int:(a,b)=>a+Math.floor(Math.random()*(b-a+1)),
+  pick:a=>a[Math.floor(Math.random()*a.length)],
+  shuffle(a){ a=a.slice(); for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; },
+  fmt(n){ const r=Math.round(n*100)/100; return (r<0?'−':'')+String(Math.abs(r)); }
+};
+const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const regionById = id => C.regions.find(r => r.id === id);
+const regionOfTrail = id => C.regions.find(r => r.trails.includes(id));
+const regionOfWarlord = id => C.regions.find(r => r.warlord === id);
+
+function instantiate(def){
+  for (let i=0;i<200;i++){
+    const raw = def.gen ? def.gen(R) : def;
+    if (!raw) continue;
+    const a = String(raw.a);
+    const wrong = raw.wrong.map(w => typeof w === 'object' ? {t:String(w.t), why:w.why||''} : {t:String(w), why:''});
+    const all = [a, ...wrong.map(w=>w.t)];
+    if (new Set(all).size !== all.length) continue;
+    return { id:def.id, level:def.level, q: raw.q || 'Work out:<span class="expr">'+raw.expr+'</span>', a, wrong, why:raw.why, expr:raw.expr||null, check:raw.check||null };
+  }
+  throw new Error('Could not build question '+def.id);
+}
+
+/* ---------- progress rules ---------- */
+function regionStatus(r){
+  if (S.regions[r.id] && S.regions[r.id].cleared) return 'cleared';
+  const unlocked = !r.requires || (S.regions[r.requires] && S.regions[r.requires].cleared);
+  if (!unlocked) return 'locked';
+  return r.trails.length ? 'open' : 'soon';
+}
+function deck(id){ return S.trails[id] || (S.trails[id] = { correct:0, cleared:false, counter:0, review:[], recent:[], done:{}, cur:null }); }
+function trailOpen(region, i){ return i === 0 || deck(region.trails[i-1]).cleared; }
+function trailLevel(id){ const t=deck(id), d=C.trails[id]; if (t.cleared) return null; return Math.min(d.levels, 1+Math.floor(t.correct/d.goal*d.levels)); }
+function fightLevel(F){ const w=C.warlords[F.id]; let done=w.hp-F.hp, i=0; for(;i<w.phases.length-1;i++){ if(done<w.phases[i].hits) break; done-=w.phases[i].hits; } return w.phases[i]; }
+
+function draw(d, setId, level, forceReview){
+  let i = d.review.findIndex(r => r.due <= d.counter);
+  if (i < 0 && forceReview && d.review.length) i = 0;
+  if (i >= 0) { const r = d.review.splice(i,1)[0]; return mount(d, r.q, true); }
+  let pool = C.questions.filter(q => q.set === setId && (level == null || q.level === level));
+  if (!pool.length) pool = C.questions.filter(q => q.set === setId);
+  let c = pool.filter(q => !d.recent.includes(q.id)); if (!c.length) c = pool;
+  const unseen = c.filter(q => !d.done[q.id]); if (unseen.length) c = unseen;
+  const def = R.pick(c);
+  d.recent.push(def.id); while (d.recent.length > Math.max(0, Math.min(5, pool.length-1))) d.recent.shift();
+  mount(d, instantiate(def), false);
+}
+function mount(d, inst, isReview){ d.cur = { inst, order:R.shuffle([inst.a, ...inst.wrong.map(w=>w.t)]), picked:null, isReview, gain:null }; }
+
+function reward(level){
+  S.streak++; S.bestStreak = Math.max(S.bestStreak, S.streak);
+  S.supplies += level;
+  S.score += Math.round(10*level*(1+Math.min(S.streak,10)/10));
+  let shield = false;
+  if (S.streak % E.streakForShield === 0 && S.shields < E.maxShields) { S.shields++; shield = true; }
+  return { supplies:level, shield };
+}
+
+/* ---------- actions ---------- */
+function go(screen, extra){ S.at = Object.assign({screen}, extra||{}); save(); render(); }
+
+function answerTrail(text){
+  const id = S.at.trail, d = deck(id), cur = d.cur, def = C.trails[id];
+  if (!cur || cur.picked != null) return;
+  cur.picked = text; d.counter++; S.asked++;
+  if (text === cur.inst.a) {
+    S.right++; d.done[cur.inst.id] = 1; if (!d.cleared) d.correct++;
+    cur.gain = reward(cur.inst.level);
+    if (!d.cleared && d.correct >= def.goal && !d.review.length) { d.cleared = true; cur.justCleared = true; S.supplies += def.clearBonus; S.score += 100; }
+  } else {
+    S.streak = 0; d.review.push({ q:cur.inst, due:d.counter + E.reviewGap });
+    if (navigator.vibrate) try { navigator.vibrate(60); } catch (e) {}
+  }
+  save(); render();
+}
+function nextTrail(){
+  const id = S.at.trail, d = deck(id), def = C.trails[id], was = d.cur;
+  d.cur = null;
+  if (was && was.justCleared) return go('cleared', {trail:id, region:S.at.region});
+  draw(d, id, trailLevel(id), !d.cleared && d.correct >= def.goal);
+  save(); render();
+}
+function startFight(id){
+  const w = C.warlords[id];
+  if (S.supplies < w.cost) return;
+  S.supplies -= w.cost;
+  S.fight = { id, hp:w.hp, hearts:E.hearts, counter:0, review:[], recent:[], done:{}, cur:null, outcome:null };
+  draw(S.fight, w.set, fightLevel(S.fight).level, false);
+  go('fight', {region:S.at.region});
+}
+function answerFight(text){
+  const F = S.fight, cur = F && F.cur; if (!cur || cur.picked != null) return;
+  cur.picked = text; F.counter++; S.asked++;
+  if (text === cur.inst.a) {
+    S.right++; F.done[cur.inst.id] = 1; F.hp--; S.streak++; S.bestStreak = Math.max(S.bestStreak, S.streak);
+    S.score += 20*cur.inst.level;
+  } else {
+    S.streak = 0; F.review.push({ q:cur.inst, due:F.counter + 2 });
+    if (S.shields > 0) { S.shields--; cur.shielded = true; } else F.hearts--;
+    if (navigator.vibrate) try { navigator.vibrate(90); } catch (e) {}
+  }
+  if (F.hp <= 0) F.outcome = 'won'; else if (F.hearts <= 0) F.outcome = 'lost';
+  save(); render();
+}
+function nextFight(){
+  const F = S.fight, w = C.warlords[F.id];
+  if (F.outcome === 'won') {
+    const region = regionOfWarlord(F.id), first = !(S.regions[region.id] && S.regions[region.id].cleared);
+    S.regions[region.id] = { cleared:true };
+    if (first) S.score += w.bounty;
+    S.fight = null; return go('victory', {warlord:w.set, region:region.id, first});
+  }
+  if (F.outcome === 'lost') { S.fight = null; return go('defeat', {warlord:F.id, region:S.at.region}); }
+  F.cur = null; draw(F, w.set, fightLevel(F).level, false); save(); render();
+}
+
+const ACT = {
+  go: d => go(d.to, d.region ? {region:d.region} : null),
+  node(d){
+    if (d.id === 'basecamp') return go('camp');
+    const r = regionById(d.id), st = regionStatus(r);
+    if (st === 'open' || st === 'cleared') return go('region', {region:r.id});
+    sheet = r.id; render();
+  },
+  closeSheet(){ sheet = null; render(); },
+  trail(d){ const t = deck(d.id); if (!t.cur) draw(t, d.id, trailLevel(d.id), false); go('trail', {trail:d.id, region:S.at.region}); },
+  pick(d, el){ const text = el.dataset.t; S.at.screen === 'fight' ? answerFight(text) : answerTrail(text); },
+  next(){ S.at.screen === 'fight' ? nextFight() : nextTrail(); },
+  brief: d => go('brief', {region:S.at.region, warlord:d.id}),
+  fight: d => startFight(d.id),
+  buyShield(){ if (S.supplies >= E.shieldCost && S.shields < E.maxShields) { S.supplies -= E.shieldCost; S.shields++; save(); render(); } },
+  replay(){ playIntro(() => render()); },
+  askReset(){ confirmReset = true; render(); },
+  cancelReset(){ confirmReset = false; render(); },
+  reset(){ const seen = S.introSeen; S = fresh(); S.introSeen = seen; confirmReset = false; save(); render(); }
+};
+let sheet = null, confirmReset = false;
+app.addEventListener('click', e => { const b = e.target.closest('[data-act]'); if (b && !b.disabled && ACT[b.dataset.act]) ACT[b.dataset.act](b.dataset, b); });
+app.addEventListener('keydown', e => { if ((e.key === 'Enter' || e.key === ' ') && e.target.matches('g[data-act]')) { e.preventDefault(); ACT[e.target.dataset.act](e.target.dataset, e.target); } });
+
+/* ---------- the mountain (shared by the flight and the map) ---------- */
+function seeded(s){ return () => (s = (s*16807) % 2147483647) / 2147483647; }
+function trailPoints(){ return [C.basecamp.map, ...C.regions.map(r => r.map)]; }
+function seg(a,b){ const m=(a.y+b.y)/2; return `C${a.x},${m} ${b.x},${m} ${b.x},${b.y}`; }
+function worldSVG(){
+  const rnd = seeded(11), pts = trailPoints();
+  let stars = ''; for (let i=0;i<60;i++) stars += `<circle cx="${(rnd()*400).toFixed(0)}" cy="${(rnd()*420).toFixed(0)}" r="${(0.5+rnd()).toFixed(1)}" fill="#eef3fa" opacity="${(0.3+rnd()*0.6).toFixed(2)}"/>`;
+  const pines = []; for (let i=0;i<80;i++){ const x=rnd()*400, y=660+rnd()*200, s=5+rnd()*5; pines.push([y, `<path d="M${x.toFixed(0)},${(y-s*2.4).toFixed(0)} l${s.toFixed(1)},${(s*2.4).toFixed(1)} h${(-2*s).toFixed(1)} z" fill="${rnd()>.5?'#1d5241':'#25614c'}"/>`]); }
+  pines.sort((a,b)=>a[0]-b[0]);
+  let frontier = 0; C.regions.forEach((r,i) => { if (regionStatus(r) !== 'locked') frontier = i+1; });
+  let faint = `M${pts[0].x},${pts[0].y}`, bright = faint;
+  for (let i=1;i<pts.length;i++){ faint += seg(pts[i-1],pts[i]); if (i<=frontier) bright += seg(pts[i-1],pts[i]); }
+  const mountain = 'M0,1000 L0,640 40,585 70,520 95,450 115,380 135,310 155,240 172,180 188,125 200,85 212,120 230,175 250,235 270,300 292,370 315,440 340,510 365,575 400,630 400,1000Z';
+
+  const node = (id, name, glyph, colour, p, st, boss) => {
+    const w = name.length*6.3+18;
+    return `<g class="node ${st}" data-act="node" data-id="${id}" tabindex="0" role="button" aria-label="${esc(name)}${st==='locked'?', locked':''}">
+      ${st==='open'?`<circle class="pulse" cx="${p.x}" cy="${p.y}" r="21" fill="none" stroke="#f2a65a" stroke-width="3"/>`:''}
+      <circle class="disc" cx="${p.x}" cy="${p.y}" r="21" fill="${colour}" stroke="#eef3fa" stroke-width="3"/>
+      <text class="glyph" x="${p.x}" y="${p.y+6}" text-anchor="middle" font-size="${glyph.length>2?13:glyph.length>1?15:19}" fill="${boss?'#eef3fa':'#14203c'}">${glyph}</text>
+      ${st==='cleared'?`<path d="M${p.x+14},${p.y-34} v22 M${p.x+14},${p.y-34} l14,5 -14,6" stroke="#eef3fa" stroke-width="2" fill="#e4572e"/>`:''}
+      <g class="lab"><rect x="${p.x-w/2}" y="${p.y+27}" width="${w}" height="19" rx="9.5" fill="#101935" opacity=".86"/>
+      <text x="${p.x}" y="${p.y+40.500}" text-anchor="middle" font-size="11.500" fill="#eef3fa">${esc(name)}</text></g></g>`;
+  };
+  let nodes = '', fog = '';
+  C.regions.forEach(r => {
+    const st = regionStatus(r);
+    nodes += node(r.id, r.name, r.glyph, r.colour, r.map, st, r.boss);
+    if (st === 'locked') fog += `<ellipse cx="${r.map.x-34}" cy="${r.map.y-6}" rx="74" ry="26" fill="url(#fogg)"/><ellipse cx="${r.map.x+40}" cy="${r.map.y+12}" rx="80" ry="24" fill="url(#fogg)"/><ellipse cx="${r.map.x}" cy="${r.map.y-24}" rx="60" ry="20" fill="url(#fogg)"/>`;
+  });
+  const b = C.basecamp.map;
+  return `<svg class="world" viewBox="0 0 400 1000" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Map of Maths Mountain">
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#101935"/><stop offset=".38" stop-color="#2a3566"/><stop offset=".56" stop-color="#7a5c8c"/><stop offset=".68" stop-color="#f2a65a"/></linearGradient>
+    <radialGradient id="sun"><stop offset="0" stop-color="#ffe2a8"/><stop offset=".35" stop-color="#f7b96a" stop-opacity=".7"/><stop offset="1" stop-color="#f2a65a" stop-opacity="0"/></radialGradient>
+    <radialGradient id="fogg"><stop offset="0" stop-color="#dfe6f2" stop-opacity=".95"/><stop offset=".6" stop-color="#cfd8e8" stop-opacity=".6"/><stop offset="1" stop-color="#cfd8e8" stop-opacity="0"/></radialGradient>
+    <clipPath id="mclip"><path d="${mountain}"/></clipPath>
+  </defs>
+  <rect width="400" height="1000" fill="url(#sky)"/>${stars}
+  <circle cx="335" cy="600" r="120" fill="url(#sun)"/>
+  <path d="M0,560 60,500 100,540 150,470 200,560 260,520 300,470 350,530 400,480 400,700 0,700Z" fill="#4b4478"/>
+  <path d="M0,620 50,570 110,610 250,600 310,550 360,600 400,570 400,720 0,720Z" fill="#3a3966"/>
+  <g clip-path="url(#mclip)">
+    <rect y="60" width="400" height="180" fill="#eef3fa"/>
+    <path d="M0,215 q25,-18 50,0 t50,0 50,0 50,0 50,0 50,0 50,0 50,0 V450 H0Z" fill="#69749a"/>
+    <path d="M0,430 q25,14 50,0 t50,0 50,0 50,0 50,0 50,0 50,0 50,0 V660 H0Z" fill="#567a78"/>
+    <path d="M0,640 q25,-14 50,0 t50,0 50,0 50,0 50,0 50,0 50,0 50,0 V880 H0Z" fill="#2f6b55"/>
+    <path d="M0,872 q25,12 50,0 t50,0 50,0 50,0 50,0 50,0 50,0 50,0 V1000 H0Z" fill="#5b9a5f"/>
+    <path d="M200,85 L230,260 205,420 250,640 400,640 400,630 365,575 340,510 315,440 292,370 270,300 250,235 230,175 212,120Z" fill="#101935" opacity=".16"/>
+    <g fill="none" stroke="#101935" stroke-opacity=".13" stroke-width="1.200">
+      <path d="M90,470 q60,-40 120,-8 t110,10"/><path d="M60,545 q90,-46 170,-6 t130,6"/><path d="M130,330 q40,-26 80,-6 t70,12"/><path d="M20,760 q110,-40 200,0 t170,-10"/><path d="M10,905 q120,-30 210,0 t170,0"/>
+    </g>
+    ${pines.map(p=>p[1]).join('')}
+    <path d="M212,268 C240,330 200,380 215,430 S300,560 250,620 300,690 285,722" fill="none" stroke="#8fd0ea" stroke-width="3" stroke-linecap="round"/>
+    <ellipse cx="285" cy="728" rx="52" ry="15" fill="#5fb0d6"/><ellipse cx="275" cy="725" rx="26" ry="5" fill="#a5dcf2" opacity=".6"/>
+    <path d="M52,618 q17,-26 34,0 t34,0 34,0 34,0" fill="none" stroke="#c9e6b4" stroke-width="2.500" opacity=".7"/>
+    <ellipse cx="265" cy="502" rx="80" ry="15" fill="#8fb39a" opacity=".55"/>
+    <path d="M118,392 l12,-30 10,18 9,-24 14,36Z M196,398 l10,-22 12,22Z" fill="#4d5677"/>
+  </g>
+  <ellipse cx="200" cy="100" rx="70" ry="20" fill="#2b2140" opacity=".75"/><ellipse cx="160" cy="118" rx="46" ry="13" fill="#2b2140" opacity=".6"/><ellipse cx="246" cy="116" rx="50" ry="14" fill="#2b2140" opacity=".6"/>
+  <path d="${faint}" fill="none" stroke="#eef3fa" stroke-opacity=".35" stroke-width="2.500" stroke-dasharray="2 7" stroke-linecap="round"/>
+  <path d="${bright}" fill="none" stroke="#ffe2a8" stroke-width="3" stroke-dasharray="2 7" stroke-linecap="round"/>
+  <g><path d="M${b.x-46},${b.y+8} l14,-24 14,24Z" fill="#eef3fa"/><path d="M${b.x-32},${b.y+8} l0,-24 14,24Z" fill="#c4cde0"/>
+     <path d="M${b.x+24},${b.y+10} l16,-28 16,28Z" fill="#e4572e"/><path d="M${b.x+40},${b.y+10} l0,-28 16,28Z" fill="#b8431f"/>
+     <path d="M${b.x-70},${b.y+26} l11,-19 11,19Z" fill="#f2a65a"/>
+     <circle class="fire" cx="${b.x+68}" cy="${b.y+24}" r="5" fill="#ffd27a"/><circle cx="${b.x+68}" cy="${b.y+24}" r="14" fill="url(#sun)"/></g>
+  ${node('basecamp', C.basecamp.name, '⌂', '#eef3fa', b, 'camp', false)}
+  ${nodes}
+  <g class="fog" pointer-events="none">${fog}</g>
+  </svg>`;
+}
+
+/* ---------- screens ---------- */
+const use = id => `<svg aria-hidden="true"><use href="#${id}"/></svg>`;
+function hud(alt){ return `<div class="hud" aria-label="Your resources">
+  <span class="res res--sup" title="Supplies">${use('i-pack')}${S.supplies}</span>
+  <span class="res res--shd" title="Shields">${use('i-shield')}${S.shields}</span>
+  ${alt?`<span class="res res--alt" title="Altitude">${use('i-peak')}${S.score}<small>m</small></span>`:''}</div>`; }
+
+const SCREENS = {
+  map(){
+    const r = sheet && regionById(sheet); let sh = '';
+    if (r) { const st = regionStatus(r), req = r.requires && regionById(r.requires), wl = req && req.warlord && C.warlords[req.warlord];
+      sh = `<div class="sheet pad" role="dialog" aria-label="${esc(r.name)}"><p class="eyebrow">${st==='locked'?'Fogged in':'Fog lifted'}</p><h2>${esc(r.name)}</h2><p>${esc(r.tagline)}</p>
+        <ul class="chips">${r.topics.map(t=>`<li>${esc(t)}</li>`).join('')}</ul>
+        <p class="small">${st==='locked' ? (r.boss ? 'The summit stays hidden until every region below is cleared.' : `Clear ${esc(req.name)}${wl?` and reject ${esc(wl.name)}`:''} to lift the fog.`) : 'You have earned your way in. This trail is still being built and will open in a later update.'}</p>
+        <button class="btn btn--quiet" data-act="closeSheet">Back to the map</button></div>`; }
+    return `<section class="screen map"><div class="mapscroll" id="mapscroll">${worldSVG()}</div>
+      <div class="maphud pad">${hud(true)}</div>${sh}</section>`;
+  },
+
+  camp(){
+    const acc = S.asked ? Math.round(S.right/S.asked*100)+'%' : 'none yet';
+    const cleared = C.regions.filter(r => regionStatus(r) === 'cleared').length;
+    const full = S.shields >= E.maxShields;
+    return `<section class="screen" style="--tint:#3a2c3e"><header class="top pad"><button class="back" data-act="go" data-to="map">‹ Map</button>${hud(true)}</header>
+    <div class="body pad"><div><p class="eyebrow">Altitude 0 m</p><h1>${esc(C.basecamp.name)}</h1></div>
+      <div class="card"><h2>Quartermaster</h2><p>A shield absorbs one wrong answer in a warlord fight. You also earn one for every ${E.streakForShield} correct answers in a row. You can carry ${E.maxShields}.</p>
+        <button class="btn" data-act="buyShield" ${S.supplies<E.shieldCost||full?'disabled':''}>${full?'Carrying the maximum':`Buy a shield for ${E.shieldCost} supplies`}</button></div>
+      <div class="card"><h2>Expedition log</h2><dl class="log">
+        <dt>Altitude climbed</dt><dd>${S.score} m</dd><dt>Questions answered</dt><dd>${S.asked}</dd><dt>Answered correctly</dt><dd>${acc}</dd>
+        <dt>Current streak</dt><dd>${S.streak}</dd><dt>Best streak</dt><dd>${S.bestStreak}</dd><dt>Regions cleared</dt><dd>${cleared} of ${C.regions.length}</dd></dl></div>
+      <div class="card"><button class="btn btn--quiet" data-act="replay">Watch the flight again</button>
+        ${confirmReset ? `<p>This wipes all progress on this device.</p><button class="btn" data-act="reset">Yes, start over</button><button class="btn btn--quiet" data-act="cancelReset">Keep my progress</button>`
+                       : `<button class="btn btn--quiet" data-act="askReset">Start over</button>`}
+        <p class="small">Progress is saved on this device as you play.</p></div>
+    </div></section>`;
+  },
+
+  region(){
+    const r = regionById(S.at.region), w = C.warlords[r.warlord];
+    const allClear = r.trails.every(id => deck(id).cleared), done = regionStatus(r) === 'cleared';
+    const stops = r.trails.map((id,i) => { const d = C.trails[id], t = deck(id), open = trailOpen(r,i), n = Math.min(t.correct, d.goal);
+      const line = t.cleared ? 'Cleared. Practise here for more supplies.' : !open ? 'Clear the trail before this one first.' : `${n} of ${d.goal} answered${t.review.length?`, ${t.review.length} to revisit`:''}`;
+      return `<li><button class="stop ${t.cleared?'cleared':''}" data-act="trail" data-id="${id}" ${open?'':'disabled'}>
+        <span class="stop__n">${i+1}</span><b>${esc(d.name)}</b><span>${esc(d.blurb)}</span><span>${line}</span>
+        <div class="bar" style="grid-column:1/-1"><i style="width:${n/d.goal*100}%"></i></div></button></li>`; }).join('');
+    let war = '';
+    if (w) war = !allClear
+      ? `<div class="warcard locked"><p class="eyebrow">Warlord</p><h2>${esc(w.name)}</h2><p class="small">Clear all ${r.trails.length} trails to challenge him.</p></div>`
+      : `<div class="warcard"><p class="eyebrow">${done?'Rejected':'Warlord'} · ${esc(w.title)}</p><h2>${esc(w.name)}</h2><p>${esc(w.attack)}</p>
+          <button class="btn" data-act="brief" data-id="${r.warlord}">${done?'Fight him again':'Prepare for battle'}</button></div>`;
+    return `<section class="screen" style="--tint:${r.colour}55;--region:${r.colour}"><header class="top pad"><button class="back" data-act="go" data-to="map">‹ Map</button>${hud()}</header>
+      <div class="body pad"><div><p class="eyebrow">Region</p><h1>${esc(r.name)}</h1><p class="lede">${esc(r.tagline)}</p></div><ol class="path">${stops}</ol>${war}</div></section>`;
+  },
+
+  trail(){
+    const id = S.at.trail, d = C.trails[id], t = deck(id), r = regionOfTrail(id);
+    if (!t.cur) { draw(t, id, trailLevel(id), false); save(); }
+    const n = Math.min(t.correct, d.goal), cur = t.cur;
+    const pips = t.cleared ? `<span class="eyebrow" style="flex:1">Practice</span>` : `<div class="pips" role="img" aria-label="${n} of ${d.goal} answered">${Array.from({length:d.goal},(_,i)=>`<i class="${i<n?'on':''}"></i>`).join('')}</div>`;
+    const meta = `<div class="meta"><span>${esc(d.name)}</span><span class="tag">Difficulty ${cur.inst.level} of ${d.levels}</span>${cur.isReview?'<span class="tag tag--back">Back again</span>':''}${t.review.length?`<span class="tag">${t.review.length} to revisit</span>`:''}</div>`;
+    const flavour = `<p class="flavour">${esc(d.encounters[t.counter % d.encounters.length])}</p>`;
+    return `<section class="screen" style="--tint:${r.colour}44"><header class="top pad"><button class="back" data-act="go" data-to="region" data-region="${r.id}">‹ Leave</button>${pips}${hud()}</header>
+      <div class="body pad">${meta}${cur.picked==null?flavour:''}${questionHTML(cur)}${feedbackHTML(cur, cur.justCleared ? '' : '<p class="note">This one will come back in a few questions.</p>')}</div>
+      ${cur.picked!=null ? `<footer class="foot pad"><button class="btn" data-act="next" id="next">${cur.justCleared?'Trail cleared':'Next question'}</button></footer>` : `<footer class="foot pad"><p class="streak">${S.streak>1?`${S.streak} in a row. `:''}${E.streakForShield-(S.streak%E.streakForShield)} more in a row earns a shield.</p></footer>`}</section>`;
+  },
+
+  cleared(){
+    const id = S.at.trail, d = C.trails[id], r = regionOfTrail(id), i = r.trails.indexOf(id), nextId = r.trails[i+1], w = C.warlords[r.warlord];
+    return `<section class="screen" style="--tint:${r.colour}66"><div class="body pad" style="justify-content:center">
+      <p class="eyebrow">Trail cleared</p><h1>${esc(d.name)}</h1><p class="lede">Every question answered, including the ones you missed first time.</p>
+      <p class="gain">+${d.clearBonus} supplies · +100 m altitude</p>
+      ${nextId ? `<button class="btn" data-act="trail" data-id="${nextId}">On to ${esc(C.trails[nextId].name)}</button>` : w ? `<button class="btn" data-act="brief" data-id="${r.warlord}">Face ${esc(w.name)}</button>` : ''}
+      <button class="btn btn--quiet" data-act="go" data-to="region" data-region="${r.id}">Back to ${esc(r.name)}</button></div></section>`;
+  },
+
+  brief(){
+    const r = regionById(S.at.region), id = r.warlord, w = C.warlords[id], short = w.cost - S.supplies;
+    return `<section class="screen" style="--tint:#4a1f2e"><header class="top pad"><button class="back" data-act="go" data-to="region" data-region="${r.id}">‹ Back</button>${hud()}</header>
+      <div class="body pad"><div><p class="eyebrow">Scout report · ${esc(w.title)}</p><h1>${esc(w.name)}</h1><p class="lede">${esc(w.attack)}</p></div>
+      <div class="arena">${scene(w, 1)}</div>
+      <ul class="brief">${w.brief.map(b=>`<li>${b}</li>`).join('')}</ul>
+      <p class="small">Land ${w.hp} correct answers to reject him. You have ${E.hearts} lives${S.shields?` and ${S.shields} shield${S.shields>1?'s':''}`:''}. A wrong answer costs one, and that question returns.</p></div>
+      <footer class="foot pad"><button class="btn" data-act="fight" data-id="${id}" ${short>0?'disabled':''}>${short>0?`You need ${short} more supplies`:`Spend ${w.cost} supplies and attack`}</button>
+      ${short>0?'<p class="streak">Practise any trail to earn more.</p>':''}</footer></section>`;
+  },
+
+  fight(){
+    const F = S.fight; if (!F) return SCREENS.region();
+    const w = C.warlords[F.id], cur = F.cur, ph = fightLevel(F);
+    const bars = `<div class="vs"><div>${esc(w.name)}<div class="hp">${Array.from({length:w.hp},(_,i)=>`<i class="${i<F.hp?'on':''}"></i>`).join('')}</div></div>
+      <div style="text-align:right">You<div class="hp you" style="justify-content:flex-end">${Array.from({length:S.shields},()=>'<i class="on sh"></i>').join('')}${Array.from({length:E.hearts},(_,i)=>`<i class="${i<F.hearts?'on':''}"></i>`).join('')}</div></div></div>`;
+    const after = F.outcome ? '' : `<p class="note">${cur.shielded?'Your shield took the blow. ':'You lost a life. '}This question will return.</p>`;
+    const label = F.outcome === 'won' ? 'Claim the victory' : F.outcome === 'lost' ? 'Retreat to the foothills' : 'Next attack';
+    return `<section class="screen" style="--tint:#4a1f2e"><div class="body pad" style="padding-top:14px">
+      <div class="arena">${scene(w, F.hp/w.hp)}</div>${bars}
+      ${cur.picked==null?`<p class="taunt">${esc(ph.taunt)}</p>`:''}${questionHTML(cur)}${feedbackHTML(cur, after, 'A clean hit.')}</div>
+      ${cur.picked!=null?`<footer class="foot pad"><button class="btn" data-act="next" id="next">${label}</button></footer>`:''}</section>`;
+  },
+
+  victory(){
+    const r = regionById(S.at.region), w = C.warlords[r.warlord], nxt = C.regions.find(x => x.requires === r.id);
+    return `<section class="screen" style="--tint:#2f6b55"><div class="body pad" style="justify-content:center">
+      <p class="eyebrow">Rejected on strong evidence</p><h1>${esc(w.name)} retreats</h1>
+      ${S.at.first?`<p class="gain">+${w.bounty} m altitude</p>`:''}
+      <div class="card"><h2>What you now know</h2><ul style="margin:0;padding-left:20px;display:flex;flex-direction:column;gap:6px">${w.learned.map(l=>`<li>${esc(l)}</li>`).join('')}</ul></div>
+      ${nxt?`<p>The fog lifts over <b>${esc(nxt.name)}</b>.</p>`:''}
+      <button class="btn" data-act="go" data-to="map">Back to the map</button></div></section>`;
+  },
+
+  defeat(){
+    const r = regionById(S.at.region), w = C.warlords[r.warlord];
+    return `<section class="screen" style="--tint:#4a1f2e"><div class="body pad" style="justify-content:center">
+      <p class="eyebrow">Out of lives</p><h1>${esc(w.name)} holds the pass</h1>
+      <p class="lede">Nothing is lost but the supplies you spent. Every explanation you read still counts. Practise a trail, restock, and come back.</p>
+      <button class="btn" data-act="go" data-to="region" data-region="${r.id}">Back to ${esc(r.name)}</button></div></section>`;
+  }
+};
+
+function questionHTML(cur){
+  const q = cur.inst, long = cur.order.some(t => t.length > 9);
+  const opts = cur.order.map(t => { let c = '';
+    if (cur.picked != null) c = t === q.a ? 'is-right' : t === cur.picked ? 'is-wrong' : '';
+    return `<button class="opt ${c}" data-act="pick" data-t="${esc(t)}" ${cur.picked!=null?'disabled':''}>${esc(t)}</button>`; }).join('');
+  return `<p class="q">${q.q}</p><div class="opts ${long?'long':''}">${opts}</div>`;
+}
+function feedbackHTML(cur, wrongNote, rightNote){
+  if (cur.picked == null) return '';
+  const q = cur.inst;
+  if (cur.picked === q.a) { const g = cur.gain;
+    return `<div class="fb ok" id="fb" role="status"><h2>Correct</h2><p class="why">${esc(q.why)}</p>
+      ${g?`<p class="gain">+${g.supplies} suppl${g.supplies>1?'ies':'y'}${g.shield?' · streak shield earned':''}</p>`:rightNote?`<p class="gain">${rightNote}</p>`:''}</div>`; }
+  const trap = (q.wrong.find(w => w.t === cur.picked) || {}).why;
+  return `<div class="fb no" id="fb" role="status"><h2>Not quite. The answer is ${esc(q.a)}</h2>
+    ${trap?`<p class="trap"><b>What went wrong:</b> ${esc(trap)}</p>`:''}<p class="why"><b>Why:</b> ${esc(q.why)}</p>${wrongNote||''}</div>`;
+}
+
+/* warlord scenes: each draws the warlord's attack as a picture. f = health left, 1 to 0. */
+const SCENES = {
+  outlier(f){
+    const dots = [38,52,60,66,74,86], med = 63, mean = med + 58*f;
+    return `<svg viewBox="0 0 320 120" role="img" aria-label="A cluster of dots, with Lord Outlier far to the right dragging the mean towards him">
+      <line x1="14" y1="84" x2="306" y2="84" stroke="#34427a" stroke-width="2"/>
+      ${dots.map(x=>`<circle cx="${x}" cy="74" r="6" fill="#9fd3ff"/>`).join('')}
+      <line x1="${mean}" y1="70" x2="262" y2="52" stroke="#e4572e" stroke-width="2" stroke-dasharray="4 4" opacity="${0.25+0.75*f}"/>
+      <circle cx="268" cy="54" r="19" fill="#e4572e"/><path d="M252,38 l4,-14 6,9 6,-12 6,12 6,-9 4,14Z" fill="#f2a65a"/>
+      <circle cx="261" cy="52" r="3" fill="#101935"/><circle cx="275" cy="52" r="3" fill="#101935"/><path d="M260,63 q8,-6 16,0" stroke="#101935" stroke-width="2" fill="none"/>
+      <path d="M${med},88 l-6,11 h12Z" fill="#7fe0b3"/><text x="${med}" y="113" text-anchor="middle" font-size="11" fill="#7fe0b3" font-family="inherit">median</text>
+      <path d="M${mean},88 l-6,11 h12Z" fill="#f2a65a"/><text x="${Math.max(mean, med+44)}" y="113" text-anchor="middle" font-size="11" fill="#f2a65a" font-family="inherit">mean</text>
+    </svg>`;
+  }
+};
+function scene(w, f){ return (SCENES[w.scene] || (() => ''))(Math.max(0, f)); }
+
+function render(){
+  const fn = SCREENS[S.at.screen] || SCREENS.map;
+  app.innerHTML = fn();
+  if (S.at.screen === 'map' || !SCREENS[S.at.screen]) {
+    const sc = document.getElementById('mapscroll'), pts = trailPoints();
+    let i = 0; C.regions.forEach((r,k) => { const st = regionStatus(r); if (st === 'open' || st === 'cleared') i = k+1; });
+    sc.scrollTop = pts[i].y/1000*sc.scrollHeight - sc.clientHeight*0.62;
+  }
+  const fb = document.getElementById('fb'); if (fb) fb.scrollIntoView({block:'nearest'});
+}
+
+/* ---------- the opening flight ---------- */
+function cr(p0,p1,p2,p3,t){ return 0.5*((2*p1)+(-p0+p2)*t+(2*p0-5*p1+4*p2-p3)*t*t+(-p0+3*p1-3*p2+p3)*t*t*t); }
+function playIntro(done){
+  const el = document.createElement('div'); el.className = 'flight';
+  const rnd = seeded(5); let clouds = '';
+  for (let i=0;i<16;i++) clouds += `<i class="cloud" style="left:${(rnd()*380-70).toFixed(0)}px;top:${(60+rnd()*1500).toFixed(0)}px;transform:scale(${(0.7+rnd()).toFixed(2)});opacity:${(0.35+rnd()*0.5).toFixed(2)}"></i>`;
+  el.innerHTML = `<div class="cam">${worldSVG()}</div><div class="near">${clouds}</div>
+    <div class="cap pad" aria-live="polite"></div><button class="skip" ${S.introSeen?'':'hidden'}>Skip</button>`;
+  app.appendChild(el);
+  const cam = el.querySelector('.cam'), near = el.querySelector('.near'), cap = el.querySelector('.cap');
+  const stops = [{x:200,y:520,z:1,name:'Maths Mountain',line:'One question at a time, all the way up.'}]
+    .concat(C.regions.slice().reverse().map(r => ({x:r.map.x,y:r.map.y,z:r.boss?1.9:2.1,name:r.name,line:r.tagline})))
+    .concat([{x:C.basecamp.map.x,y:C.basecamp.map.y,z:2.5,name:C.basecamp.name,line:'Every climb starts here.'}]);
+  const HOLD = 1500, SEG = 1900, total = HOLD + (stops.length-1)*SEG;
+  let raf = 0, start = 0, shown = -1, ended = false;
+  function place(u){
+    const vw = el.clientWidth, vh = el.clientHeight, base = vw/400;
+    const i = Math.min(stops.length-2, Math.floor(u)), t = u-i, g = k => stops[Math.max(0, Math.min(stops.length-1, k))];
+    const f = key => cr(g(i-1)[key], g(i)[key], g(i+1)[key], g(i+2)[key], t);
+    const z = Math.max(1, f('z')), s = z*base, hw = vw/2/s, hh = vh/2/s;
+    const x = Math.max(hw, Math.min(400-hw, f('x'))), y = Math.max(Math.min(hh,500), Math.min(Math.max(1000-hh,500), f('y')));
+    cam.style.transform = `translate(${vw/2-x*s}px,${vh/2-y*s}px) scale(${s})`;
+    const ns = s*1.25; near.style.transform = `translate(${vw/2-x*ns}px,${vh/2-y*1.55*ns}px) scale(${ns})`;
+    const k = Math.round(u); if (k !== shown) { shown = k; cap.innerHTML = `<div><b>${esc(stops[k].name)}</b><span>${esc(stops[k].line)}</span></div>`; }
+  }
+  function finish(){
+    if (ended) return; ended = true; cancelAnimationFrame(raf); place(stops.length-1); cap.hidden = true;
+    el.querySelector('.skip').hidden = true;
+    const card = document.createElement('div'); card.className = 'titlecard pad';
+    card.innerHTML = `<p class="eyebrow">Maths and statistics, one question at a time</p><h1>Maths Mountain</h1>
+      <p>Answer questions to earn supplies. Spend them to face the warlord at the end of each region.</p><button class="btn">${S.asked?'Continue the climb':'Start the climb'}</button>`;
+    el.appendChild(card);
+    card.querySelector('button').addEventListener('click', () => { S.introSeen = true; save(); el.remove(); done(); });
+  }
+  function frame(now){
+    if (!start) start = now; const e = now-start;
+    if (e >= total) return finish();
+    place(e < HOLD ? 0 : (e-HOLD)/SEG); raf = requestAnimationFrame(frame);
+  }
+  el.querySelector('.skip').addEventListener('click', finish);
+  if (matchMedia('(prefers-reduced-motion: reduce)').matches) finish(); else { place(0); raf = requestAnimationFrame(frame); }
+}
+
+/* ---------- content checker: open the page with #check ---------- */
+function checkContent(){
+  const out = [], bad = [], ids = new Set();
+  const num = t => { const s = String(t).replace(/−/g,'-').replace(/[£,]/g,''); return /^-?\d+(\.\d+)?$/.test(s) ? Number(s) : NaN; };
+  const evalExpr = e => Function('"use strict";return ('+e.replace(/×/g,'*').replace(/÷/g,'/').replace(/−/g,'-').replace(/²/g,'**2').replace(/³/g,'**3').replace(/√\(/g,'Math.sqrt(')+')')();
+  function one(def, inst){
+    const tag = def.id + (def.gen ? ' [' + inst.q.replace(/<[^>]+>/g,' ') + ']' : '');
+    if (inst.wrong.length !== 3) bad.push(tag+': needs exactly 3 wrong answers');
+    if (!inst.why) bad.push(tag+': no explanation');
+    const an = num(inst.a);
+    inst.wrong.forEach(w => { if (!isNaN(an) && num(w.t) === an) bad.push(tag+': wrong answer '+w.t+' equals the right answer'); });
+    if (inst.expr) { const v = evalExpr(inst.expr); if (!(Math.abs(v-an) < 1e-9)) bad.push(tag+': '+inst.expr+' = '+v+' but answer says '+inst.a); }
+    if (inst.check) { const v = Function('return ('+inst.check+')')(); if (!(Math.abs(v-an) < 1e-9)) bad.push(tag+': check gives '+v+' but answer says '+inst.a); }
+  }
+  let runs = 0;
+  C.questions.forEach(def => {
+    if (ids.has(def.id)) bad.push(def.id+': duplicate id'); ids.add(def.id);
+    try { for (let i=0;i<(def.gen?500:1);i++) { one(def, instantiate(def)); runs++; } } catch (e) { bad.push(def.id+': '+e.message); }
+  });
+  const sets = {}; C.questions.forEach(q => { (sets[q.set] = sets[q.set] || {})[q.level] = ((sets[q.set]||{})[q.level]||0)+1; });
+  C.regions.forEach(r => { r.trails.forEach(id => { const d = C.trails[id]; if (!d) return bad.push(r.id+': missing trail '+id);
+      for (let l=1;l<=d.levels;l++) if (((sets[id]||{})[l]||0) < 4) bad.push(id+': fewer than 4 questions at level '+l); });
+    if (r.warlord) { const w = C.warlords[r.warlord]; if (!w) return bad.push(r.id+': missing warlord');
+      w.phases.forEach(p => { if (((sets[w.set]||{})[p.level]||0) < 3) bad.push(w.set+': fewer than 3 questions at level '+p.level); });
+      if (w.phases.reduce((n,p)=>n+p.hits,0) !== w.hp) bad.push(w.set+': phase hits do not add up to hp'); }
+    if (r.requires && !regionById(r.requires)) bad.push(r.id+': requires unknown region'); });
+  Object.keys(sets).forEach(s => out.push(s+': '+Object.keys(sets[s]).map(l=>'level '+l+' × '+sets[s][l]).join(', ')));
+  return { ok:!bad.length, questions:C.questions.length, runs, sets:out, problems:bad };
+}
+window.MM = { check:checkContent, state:() => S };
+
+if (/check/.test(location.hash + location.search)) {
+  const r = checkContent();
+  app.innerHTML = `<div class="checkout pad"><h1>Content check</h1><p>${r.ok?'All answers verified.':'Problems found: '+r.problems.length}</p>
+    <p class="small">${r.questions} questions, ${r.runs} instances checked.</p><pre>${esc(r.sets.join('\n'))}</pre>${r.ok?'':`<pre>${esc(r.problems.join('\n'))}</pre>`}</div>`;
+} else {
+  render();
+  playIntro(() => render());
+}
+})();
+</script>
+
+</body></html>
